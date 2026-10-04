@@ -26,8 +26,8 @@
                 <x-desktop-user-menu />
             @else
                 <div class="flex items-center gap-2">
-                    <flux:button :current="request()->routeIs('login')" variant="ghost" size="sm" wire:navigate>ログイン</flux:button>
-                    <flux:button :current="request()->routeIs('register')" variant="primary" size="sm" wire:navigate>会員登録</flux:button>
+                    <flux:button :href="route('login')" variant="ghost" size="sm" wire:navigate>ログイン</flux:button>
+                    <flux:button :href="route('register')" variant="primary" size="sm" wire:navigate>会員登録</flux:button>
                 </div>
             @endauth
         </flux:header>
@@ -47,8 +47,8 @@
                         イベントを登録
                     </flux:sidebar.item>
                 @else
-                    <flux:sidebar.item icon="arrow-right-end-on-rectangle" :current="request()->routeIs('login')" wire:navigate>ログイン</flux:sidebar.item>
-                    <flux:sidebar.item icon="user-plus" :current="request()->routeIs('register')" wire:navigate>会員登録</flux:sidebar.item>
+                    <flux:sidebar.item icon="arrow-right-end-on-rectangle" :href="route('login')" wire:navigate>ログイン</flux:sidebar.item>
+                    <flux:sidebar.item icon="user-plus" :href="route('register')" wire:navigate>会員登録</flux:sidebar.item>
                 @endauth
             </flux:sidebar.nav>
 
