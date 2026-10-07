@@ -69,8 +69,8 @@ new #[Title('イベントを編集')] class extends Component {
         <flux:input wire:model="venue" label="会場" />
 
         <div class="grid gap-6 sm:grid-cols-2">
-            <flux:input wire:model="starts_at" label="開始日時" type="datetime-local" />
-            <flux:input wire:model="ends_at" label="終了日時" type="datetime-local" />
+            <x-drum-picker wire:model="starts_at" label="開始日時" />
+            <x-drum-picker wire:model="ends_at" label="終了日時" />
         </div>
 
         <div class="flex justify-between">
