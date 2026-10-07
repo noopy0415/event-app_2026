@@ -1,6 +1,9 @@
 <?php
 
 use App\Models\Event;
+use App\Models\TicketType;
+use Illuminate\Database\Eloquent\Collection;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
@@ -34,6 +37,59 @@ new #[Title('イベントを編集')] class extends Component {
         $this->venue = $event->venue;
         $this->starts_at = $event->starts_at->format('Y-m-d\TH:i');
         $this->ends_at = $event->ends_at->format('Y-m-d\TH:i');
+    }
+
+    // 券種の追加フォーム用。save() の validate() に混ざらないよう #[Validate] は付けない
+    public string $ticketName = '';
+
+    public string $ticketPrice = '';
+
+    public string $ticketCapacity = '';
+
+    /**
+     * このイベントの券種を登録順に取り出す。
+     *
+     * @return Collection<int, TicketType>
+     */
+    #[Computed]
+    public function ticketTypes(): Collection
+    {
+        return $this->event->ticketTypes()->orderBy('id')->get();
+    }
+
+    public function addTicketType(): void
+    {
+        $this->authorize('create', [TicketType::class, $this->event]);
+
+        $validated = $this->validate([
+            'ticketName' => 'required|string|max:50',
+            'ticketPrice' => 'required|integer|min:0',
+            'ticketCapacity' => 'required|integer|min:1',
+        ], attributes: [
+            'ticketName' => '券種名',
+            'ticketPrice' => '価格',
+            'ticketCapacity' => '定員',
+        ]);
+
+        $this->event->ticketTypes()->create([
+            'name' => $validated['ticketName'],
+            'price' => $validated['ticketPrice'],
+            'capacity' => $validated['ticketCapacity'],
+        ]);
+
+        $this->reset('ticketName', 'ticketPrice', 'ticketCapacity');
+        unset($this->ticketTypes);
+    }
+
+    public function deleteTicketType(int $ticketTypeId): void
+    {
+        // 他のイベントの券種を消せないよう、このイベントの券種に絞って探す
+        $ticketType = $this->event->ticketTypes()->findOrFail($ticketTypeId);
+
+        $this->authorize('delete', $ticketType);
+
+        $ticketType->delete();
+        unset($this->ticketTypes);
     }
 
     public function save(): void
@@ -81,4 +137,42 @@ new #[Title('イベントを編集')] class extends Component {
             </div>
         </div>
     </form>
+
+    <flux:separator />
+
+    <section class="space-y-4">
+        <flux:heading size="lg">券種</flux:heading>
+
+        @if ($this->ticketTypes->isEmpty())
+            <flux:text>券種はまだありません。</flux:text>
+        @else
+            <flux:table>
+                <flux:table.columns>
+                    <flux:table.column>券種名</flux:table.column>
+                    <flux:table.column>価格</flux:table.column>
+                    <flux:table.column>定員</flux:table.column>
+                    <flux:table.column></flux:table.column>
+                </flux:table.columns>
+                <flux:table.rows>
+                    @foreach ($this->ticketTypes as $ticketType)
+                        <flux:table.row wire:key="ticket-type-{{ $ticketType->id }}">
+                            <flux:table.cell variant="strong">{{ $ticketType->name }}</flux:table.cell>
+                            <flux:table.cell>{{ number_format($ticketType->price) }}円</flux:table.cell>
+                            <flux:table.cell>{{ number_format($ticketType->capacity) }}人</flux:table.cell>
+                            <flux:table.cell>
+                                <flux:button wire:click="deleteTicketType({{ $ticketType->id }})" wire:confirm="この券種を削除しますか？" size="sm" variant="danger" icon="trash">削除</flux:button>
+                            </flux:table.cell>
+                        </flux:table.row>
+                    @endforeach
+                </flux:table.rows>
+            </flux:table>
+        @endif
+
+        <form wire:submit="addTicketType" class="grid items-start gap-4 sm:grid-cols-[2fr_1fr_1fr_auto]">
+            <flux:input wire:model="ticketName" label="券種名" placeholder="一般" />
+            <flux:input wire:model="ticketPrice" label="価格（円）" type="number" min="0" />
+            <flux:input wire:model="ticketCapacity" label="定員" type="number" min="1" />
+            <flux:button type="submit" icon="plus" class="sm:mt-6">追加</flux:button>
+        </form>
+    </section>
 </div>
