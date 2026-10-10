@@ -123,3 +123,50 @@ test('イベントを削除すると券種も削除される', function () {
 
     expect(TicketType::count())->toBe(0);
 });
+
+test('主催者は券種を削除できる', function () {
+    $ticketType = TicketType::factory()->create(['event_id' => $this->event->id, 'name' => '削除する券種']);
+    $other = TicketType::factory()->create(['event_id' => $this->event->id, 'name' => '残す券種']);
+
+    $this->actingAs($this->owner);
+
+    Livewire::test('pages::events.edit', ['event' => $this->event])
+        ->call('deleteTicketType', $ticketType->id)
+        ->assertDontSee('削除する券種')
+        ->assertSee('残す券種');
+
+    expect(TicketType::find($ticketType->id))->toBeNull()
+        ->and(TicketType::find($other->id))->not->toBeNull();
+});
+
+test('他のイベントの券種は削除できない', function () {
+    $foreign = TicketType::factory()->create();
+
+    $this->actingAs($this->owner);
+
+    Livewire::test('pages::events.edit', ['event' => $this->event])
+        ->call('deleteTicketType', $foreign->id)
+        ->assertNotFound();
+
+    expect(TicketType::find($foreign->id))->not->toBeNull();
+});
+
+test('画面を開いた後にユーザーが入れ替わると券種を削除できない', function () {
+    $ticketType = TicketType::factory()->create(['event_id' => $this->event->id]);
+
+    $this->actingAs($this->owner);
+    $component = Livewire::test('pages::events.edit', ['event' => $this->event]);
+
+    $this->actingAs(User::factory()->create());
+
+    $component->call('deleteTicketType', $ticketType->id)->assertForbidden();
+
+    expect(TicketType::find($ticketType->id))->not->toBeNull();
+});
+
+test('ポリシーは主催者にだけ券種の削除を許可する', function () {
+    $ticketType = TicketType::factory()->create(['event_id' => $this->event->id]);
+
+    expect($this->owner->can('delete', $ticketType))->toBeTrue();
+    expect(User::factory()->create()->can('delete', $ticketType))->toBeFalse();
+});
