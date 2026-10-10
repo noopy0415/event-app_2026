@@ -18,9 +18,9 @@ class TicketTypeFactory extends Factory
     {
         return [
             'event_id' => Event::factory(),
-            'name' => fake()->randomElement(['一般', '学生', '子ども', 'ペア']),
-            'price' => fake()->randomElement([0, 500, 1500, 3000]),
-            'capacity' => fake()->numberBetween(1, 100),
+            'name' => fake()->randomElement(['一般', '学生', '早割']),
+            'price' => fake()->numberBetween(0, 50) * 100,
+            'capacity' => fake()->numberBetween(10, 100),
         ];
     }
 }

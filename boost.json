@@ -2,7 +2,7 @@
     "agents": [
         "claude_code"
     ],
-    "cloud": false,
+    "cloud": true,
     "guidelines": true,
     "mcp": true,
     "nightwatch": false,
@@ -12,6 +12,7 @@
     "sail": true,
     "skills": [
         "infer-conventions",
+        "deploying-to-cloud",
         "fortify-development",
         "laravel-best-practices",
         "testing-best-practices",

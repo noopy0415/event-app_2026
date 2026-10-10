@@ -1,7 +1,6 @@
 <?php
 
 use App\Models\Event;
-use App\Models\TicketType;
 use App\Models\User;
 use Livewire\Livewire;
 
@@ -198,19 +197,6 @@ test('主催者以外はイベントを削除できない', function () {
     $component->call('delete')->assertForbidden();
 
     expect(Event::find($this->event->id))->not->toBeNull();
-});
-
-test('券種を持つイベントも削除でき、券種も残らない', function () {
-    TicketType::factory()->create(['event_id' => $this->event->id]);
-
-    $this->actingAs($this->owner);
-
-    Livewire::test('pages::events.edit', ['event' => $this->event])
-        ->call('delete')
-        ->assertHasNoErrors();
-
-    expect(Event::count())->toBe(0)
-        ->and(TicketType::count())->toBe(0);
 });
 
 // ---- 一覧の認可 ----

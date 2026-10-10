@@ -18,7 +18,6 @@ use Illuminate\Support\Carbon;
  * @property string $venue
  * @property Carbon $starts_at
  * @property Carbon $ends_at
- * @property int|null $ticket_types_min_price withMin() で取得したときだけ入る
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
@@ -57,24 +56,6 @@ class Event extends Model
     public function ticketTypes(): HasMany
     {
         return $this->hasMany(TicketType::class);
-    }
-
-    /**
-     * 一覧に出す価格表示。`withMin('ticketTypes', 'price')` で取得したイベントで使う。
-     */
-    public function priceLabel(): string
-    {
-        $lowestPrice = $this->ticket_types_min_price;
-
-        if ($lowestPrice === null) {
-            return '─';
-        }
-
-        if ((int) $lowestPrice === 0) {
-            return '無料';
-        }
-
-        return number_format((int) $lowestPrice).'円〜';
     }
 
     /**
