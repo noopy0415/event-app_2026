@@ -170,3 +170,48 @@ test('ポリシーは主催者にだけ券種の削除を許可する', function
     expect($this->owner->can('delete', $ticketType))->toBeTrue();
     expect(User::factory()->create()->can('delete', $ticketType))->toBeFalse();
 });
+
+// ---- 追記: 不足していた組み合わせ ----
+
+test('主催者以外は券種の追加・削除ができる編集画面を開けない', function () {
+    $ticketType = TicketType::factory()->create(['event_id' => $this->event->id]);
+
+    $this->actingAs(User::factory()->create());
+
+    Livewire::test('pages::events.edit', ['event' => $this->event])->assertForbidden();
+
+    expect(TicketType::find($ticketType->id))->not->toBeNull();
+});
+
+test('ゲストとメール未確認のユーザーは券種を扱う編集画面を開けない', function () {
+    $this->get(route('events.edit', $this->event))->assertRedirect(route('login'));
+
+    $this->actingAs(User::factory()->unverified()->create())
+        ->get(route('events.edit', $this->event))
+        ->assertRedirect(route('verification.notice'));
+});
+
+test('券種の入力値が不正なら追加できない(追加ケース)', function (string $name, string $price, string $capacity, string $errorField) {
+    $this->actingAs($this->owner);
+
+    Livewire::test('pages::events.edit', ['event' => $this->event])
+        ->set('ticketName', $name)
+        ->set('ticketPrice', $price)
+        ->set('ticketCapacity', $capacity)
+        ->call('addTicketType')
+        ->assertHasErrors([$errorField]);
+
+    expect(TicketType::count())->toBe(0);
+})->with([
+    '定員が文字列' => ['一般', '1000', 'abc', 'ticketCapacity'],
+    '定員が負数' => ['一般', '1000', '-1', 'ticketCapacity'],
+    '券種名が空白のみ' => ['   ', '1000', '10', 'ticketName'],
+]);
+
+test('存在しない券種IDを削除しようとすると 404 になる', function () {
+    $this->actingAs($this->owner);
+
+    Livewire::test('pages::events.edit', ['event' => $this->event])
+        ->call('deleteTicketType', 999999)
+        ->assertNotFound();
+});

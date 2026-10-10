@@ -215,3 +215,36 @@ test('一覧はゲストにも表示され、編集ボタンは主催者にだ�
         ->get(route('events.index'))
         ->assertSee(route('events.edit', $this->event));
 });
+
+// ---- 追記: 不足していた組み合わせ ----
+
+test('主催者以外は編集コンポーネントを開けず 403 になる', function () {
+    $this->actingAs(User::factory()->create());
+
+    Livewire::test('pages::events.edit', ['event' => $this->event])->assertForbidden();
+});
+
+test('存在しないイベントの編集画面は 404 になる', function () {
+    $this->actingAs($this->owner)
+        ->get(route('events.edit', 999999))
+        ->assertNotFound();
+});
+
+test('イベント編集の入力値が不正なら更新できない(追加ケース)', function (array $overrides, string $errorField) {
+    $this->actingAs($this->owner);
+    $original = $this->event->only(['title', 'description', 'venue']);
+
+    $component = Livewire::test('pages::events.edit', ['event' => $this->event]);
+    foreach ($overrides as $key => $value) {
+        $component->set($key, $value);
+    }
+
+    $component->call('save')->assertHasErrors([$errorField]);
+
+    expect($this->event->fresh()->only(['title', 'description', 'venue']))->toBe($original);
+})->with([
+    '説明が2001文字' => [['description' => str_repeat('あ', 2001)], 'description'],
+    '会場が101文字' => [['venue' => str_repeat('あ', 101)], 'venue'],
+    '開始日時が空' => [['starts_at' => ''], 'starts_at'],
+    '終了が開始と同時刻' => [['starts_at' => '2026-12-01T10:00', 'ends_at' => '2026-12-01T10:00'], 'ends_at'],
+]);
